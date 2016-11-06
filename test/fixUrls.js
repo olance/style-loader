@@ -1,6 +1,5 @@
-
-
 var fixUrls = require("../fixUrls");
+var cssParser = require('csso');
 
 var currentUrl = "https://x.y.z/a/b.html";
 
@@ -10,6 +9,10 @@ var numberOfErrors = 0;
 var assert = function (title, origCss, expectedCss, specialUrl) {
   var resultCss = fixUrls(origCss, specialUrl || currentUrl);
   expectedCss = expectedCss || origCss;
+
+  // Parse & translate back expectedCss to make sure we're comparing equivalent strings from the AST-to-CSS conversion,
+  // unless expectedCss isn't a string
+  expectedCss = typeof expectedCss === 'string' ? cssParser.translate(cssParser.parse(expectedCss)) : expectedCss;
 
   if (resultCss === expectedCss) {
     logs.push("OK: " + title);
