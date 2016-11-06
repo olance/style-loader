@@ -31,12 +31,12 @@ module.exports = function () {
   assert("Blank css is not modified", "");
   assert("No url is not modified", "body { }");
   assert("Full url isn't changed (no quotes)", "body { background-image:url(http://example.com/bg.jpg); }");
-  assert("Full url isn't changed (no quotes, spaces)", "body { background-image:url ( http://example.com/bg.jpg  ); }");
+  assert("Full url isn't changed (no quotes, spaces)", "body { background-image:url( http://example.com/bg.jpg  ); }");
   assert("Full url isn't changed (double quotes)", "body { background-image:url(\"http://example.com/bg.jpg\"); }");
-  assert("Full url isn't changed (double quotes, spaces)", "body { background-image:url (  \"http://example.com/bg.jpg\" ); }");
+  assert("Full url isn't changed (double quotes, spaces)", "body { background-image:url(  \"http://example.com/bg.jpg\" ); }");
   assert("Full url isn't changed (single quotes)", "body { background-image:url('http://example.com/bg.jpg'); }");
-  assert("Full url isn't changed (single quotes, spaces)", "body { background-image:url ( 'http://example.com/bg.jpg'  ); }");
-  assert("Multiple full urls are not changed", "body { background-image:url(http://example.com/bg.jpg); }\ndiv.main { background-image:url ( 'https://www.anothersite.com/another.png' ); }");
+  assert("Full url isn't changed (single quotes, spaces)", "body { background-image:url( 'http://example.com/bg.jpg'  ); }");
+  assert("Multiple full urls are not changed", "body { background-image:url(http://example.com/bg.jpg); }\ndiv.main { background-image:url( 'https://www.anothersite.com/another.png' ); }");
   assert("Http url isn't changed", "body { background-image:url(http://example.com/bg.jpg); }");
   assert("Https url isn't changed", "body { background-image:url(https://example.com/bg.jpg); }");
   assert("HTTPS url isn't changed", "body { background-image:url(HTTPS://example.com/bg.jpg); }");
