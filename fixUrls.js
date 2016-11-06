@@ -12,6 +12,38 @@
  *
  */
 
+var cssParser = require('csso');
+
+// Takes in the current URL context and returns a function that will fix `url()` declarations given that context
+function urlFixer(protocol, baseUrl, currentUrlPath) {
+	return function fixURL(origUrl) {
+		//strip quotes (if they exist)
+		var unquotedOrigUrl = origUrl
+			.replace(/^"(.*)"$/, function(o,$1){ return $1; })
+			.replace(/^'(.*)'$/, function(o,$1){ return $1; });
+
+		//already a full url? no change
+		if (/^(data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl))
+			return unquotedOrigUrl;
+
+		//convert the url to a full url
+		var newUrl = unquotedOrigUrl;
+		if (newUrl.indexOf("//") === 0) {
+			//add protocol
+			newUrl = protocol + ":" +newUrl;
+		}else if (newUrl.indexOf("/") === 0){
+			//path should be relative to the base url
+			newUrl = baseUrl + newUrl;
+		}else{
+			//path should be relative to the current directory
+			newUrl = currentUrlPath + newUrl.replace(/^\.\//, "");
+		}
+
+		//send back the fixed url(...)
+		return JSON.stringify(newUrl);
+	}
+}
+
 module.exports = function (css, currentUrl) {
 
 	// get current url
@@ -29,34 +61,23 @@ module.exports = function (css, currentUrl) {
 	var protocol = baseUrl.split(":")[0];
 	var currentUrlPath = baseUrl + (currentUrl.replace(baseUrl, "")).replace(/\/[^\/]+$/, "") + "/";
 
-	//convert each url(...)
-	var fixedCss = css.replace(/url *\( *(.+?) *\)/g, function(fullMatch, origUrl){
-		//strip quotes (if they exist)
-		var unquotedOrigUrl = origUrl
-			.replace(/^"(.*)"$/, function(o,$1){ return $1; })
-			.replace(/^'(.*)'$/, function(o,$1){ return $1; });
+	// Get CSS AST object from CSS source and get stylesheet rules out of it
+	var ast = cssParser.parse(css);
+	var fixURL = urlFixer(protocol, baseUrl, currentUrlPath);
 
-		//already a full url? no change
-		if (/^(data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl))
-		  return fullMatch;
-
-		//convert the url to a full url
-		var newUrl = unquotedOrigUrl;
-		if (newUrl.indexOf("//") === 0) {
-		  //add protocol
-			newUrl = protocol + ":" +newUrl;
-		}else if (newUrl.indexOf("/") === 0){
-			//path should be relative to the base url
-			newUrl = baseUrl + newUrl;
-		}else{
-			//path should be relative to the current directory
-			newUrl = currentUrlPath + newUrl.replace(/^\.\//, "");
+	cssParser.walk(ast, function astWalker(node) {
+		if (this.declaration !== null && node.type === 'Url') {
+			var value = node.value;
+			if (value.type === 'Raw') {
+        value.value = fixURL(value.value);
+      } else {
+        var quotation_mark = value.value[0];
+        value.value = quotation_mark + fixURL(value.value) + quotation_mark;
+      }
 		}
-
-		//send back the fixed url(...)
-		return "url("+JSON.stringify(newUrl)+")";
 	});
 
+
 	//send back the fixed css
-	return fixedCss;
+	return cssParser.translate(ast);
 };
